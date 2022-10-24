@@ -3,7 +3,7 @@
 
 aoc_helper::main!(2015 =>
     day1,
-    // day2,
+    day2,
     // day3,
     // day4,
     // day5,
