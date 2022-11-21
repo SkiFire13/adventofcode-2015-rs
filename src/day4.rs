@@ -20,25 +20,14 @@ fn find_md5(input: &[u8], max_b3: u8) -> usize {
     use md5::{Digest, Md5};
 
     let base_hasher = Md5::new_with_prefix(input);
-    let mut idx = 1;
 
-    loop {
-        const CHUNK_SIZE: usize = 250_000;
-
-        let chunk_result = (idx..idx + CHUNK_SIZE)
-            .into_par_iter()
-            .with_max_len(50_000)
-            .find_first(|&i| {
-                let mut hasher = base_hasher.clone();
-                hasher.update(fmt_to_buf(i, &mut [0; 20]));
-                matches!(&*hasher.finalize(), &[0, 0, b3, ..] if b3 <= max_b3)
-            });
-
-        match chunk_result {
-            Some(offset) => return offset,
-            None => idx += CHUNK_SIZE,
-        }
-    }
+    (1..)
+        .par_find_chunked(250_000, |i| {
+            let mut hasher = base_hasher.clone();
+            hasher.update(fmt_to_buf(i, &mut [0; 20]));
+            matches!(&*hasher.finalize(), &[0, 0, b3, ..] if b3 <= max_b3)
+        })
+        .unwrap()
 }
 
 pub fn part1(input: &Input) -> usize {

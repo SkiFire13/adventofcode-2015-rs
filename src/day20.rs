@@ -41,7 +41,7 @@ pub fn part1(input: &Input) -> u32 {
 }
 
 pub fn part2(input: &Input) -> u32 {
-    (*input as usize * 2 / 9 / 11..usize::MAX)
+    (*input as usize * 2 / 9 / 11..)
         .par_find_chunked(10_000, |n| {
             let n = n as u32;
             let sum = (1..=50).filter(|&p| n % p == 0).map(|p| n / p).sum::<u32>();
