@@ -31,7 +31,14 @@ struct State {
     recharge_effect: u8,
 }
 
-fn tick_effects(state: &mut State) {
+fn tick_effects(state: &mut State, part2: bool) -> Option<()> {
+    if part2 {
+        state.player_health -= 1;
+        if state.player_health == 0 {
+            return None;
+        }
+    }
+
     if state.shield_effect > 0 {
         state.shield_effect -= 1;
     }
@@ -45,6 +52,8 @@ fn tick_effects(state: &mut State) {
         state.player_mana += 101;
         state.recharge_effect -= 1;
     }
+
+    Some(())
 }
 
 fn solve_rec_boss(
@@ -58,14 +67,7 @@ fn solve_rec_boss(
         return best;
     }
 
-    if part2 {
-        state.player_health -= 1;
-        if state.player_health == 0 {
-            return None;
-        }
-    }
-
-    tick_effects(&mut state);
+    tick_effects(&mut state, part2)?;
     if state.boss_health == 0 {
         return Some(curr_mana);
     }
@@ -88,72 +90,47 @@ fn solve_rec_player(
     curr_mana: u32,
     part2: bool,
 ) -> Option<u32> {
-    if part2 {
-        state.player_health -= 1;
-        if state.player_health == 0 {
-            return None;
-        }
-    }
-
-    tick_effects(&mut state);
+    tick_effects(&mut state, part2)?;
     if state.boss_health == 0 {
         return Some(curr_mana);
     }
 
-    if state.player_mana >= 113 && state.shield_effect == 0 {
-        let new_state = State {
-            player_mana: state.player_mana - 113,
-            shield_effect: 6,
-            ..state
-        };
-        if let Some(new_best) = solve_rec_boss(new_state, boss_dmg, best, curr_mana + 113, part2) {
-            best = Some(best.map_or(new_best, |best| min(best, new_best)));
+    let mut solve_rec = |mana, mut state: State| {
+        if state.player_mana >= mana {
+            state.player_mana -= mana;
+            best = solve_rec_boss(state, boss_dmg, best, curr_mana + mana, part2).or(best);
         }
+    };
+
+    if state.shield_effect == 0 {
+        let mut state = state;
+        state.shield_effect = 6;
+        solve_rec(113, state);
     }
 
-    if state.player_mana >= 173 && state.poison_effect == 0 {
-        let new_state = State {
-            player_mana: state.player_mana - 173,
-            poison_effect: 6,
-            ..state
-        };
-        if let Some(new_best) = solve_rec_boss(new_state, boss_dmg, best, curr_mana + 173, part2) {
-            best = Some(best.map_or(new_best, |best| min(best, new_best)));
-        }
+    if state.poison_effect == 0 {
+        let mut state = state;
+        state.poison_effect = 6;
+        solve_rec(173, state);
     }
 
-    if state.player_mana >= 229 && state.recharge_effect == 0 {
-        let new_state = State {
-            player_mana: state.player_mana - 229,
-            recharge_effect: 5,
-            ..state
-        };
-        if let Some(new_best) = solve_rec_boss(new_state, boss_dmg, best, curr_mana + 229, part2) {
-            best = Some(best.map_or(new_best, |best| min(best, new_best)));
-        }
+    if state.recharge_effect == 0 {
+        let mut state = state;
+        state.recharge_effect = 5;
+        solve_rec(229, state);
     }
 
-    if state.player_mana >= 53 {
-        let new_state = State {
-            player_mana: state.player_mana - 53,
-            boss_health: state.boss_health.saturating_sub(4),
-            ..state
-        };
-        if let Some(new_best) = solve_rec_boss(new_state, boss_dmg, best, curr_mana + 53, part2) {
-            best = Some(best.map_or(new_best, |best| min(best, new_best)));
-        }
+    {
+        let mut state = state;
+        state.boss_health = state.boss_health.saturating_sub(4);
+        solve_rec(53, state);
     }
 
-    if state.player_mana >= 73 {
-        let new_state = State {
-            player_mana: state.player_mana - 73,
-            boss_health: state.boss_health.saturating_sub(2),
-            player_health: state.player_health + 2,
-            ..state
-        };
-        if let Some(new_best) = solve_rec_boss(new_state, boss_dmg, best, curr_mana + 73, part2) {
-            best = Some(best.map_or(new_best, |best| min(best, new_best)));
-        }
+    {
+        let mut state = state;
+        state.boss_health = state.boss_health.saturating_sub(2);
+        state.player_health += 2;
+        solve_rec(73, state);
     }
 
     best
