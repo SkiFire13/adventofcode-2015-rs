@@ -40,6 +40,7 @@ pub fn part2(input: &Input) -> u8 {
     let mut get_rule_id = |ident| *idmap.entry(ident).or_insert_with(next_id);
 
     fn split_mol(mut mol: &str) -> impl Iterator<Item = &str> + '_ {
+        mol = mol.trim_end();
         std::iter::from_fn(move || {
             if mol.is_empty() {
                 return None;
