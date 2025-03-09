@@ -3,12 +3,14 @@ use super::prelude::*;
 type Input = u32;
 
 pub fn input_generator(input: &str) -> Input {
-    input.parse().expect("Invalid input")
+    input.trim().parse().expect("Invalid input")
 }
 
 pub fn part1(input: &Input) -> u32 {
     fn solve_rec(primes: &[u32], curr: u32, factor_sum: u32, best: u32, goal: u32) -> u32 {
-        let Some((&prime, primes)) = primes.split_first() else { return best };
+        let Some((&prime, primes)) = primes.split_first() else {
+            return best;
+        };
 
         if curr * prime > best {
             return best;
